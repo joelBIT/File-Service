@@ -13,7 +13,7 @@ import javax.ws.rs.core.Response;
 import java.io.*;
 import java.util.*;
 
-@Path("/v1")
+@Path("/v1/pdf")
 public class FileService {
     private final static Logger log = LoggerFactory.getLogger(FileService.class);
 
@@ -24,50 +24,62 @@ public class FileService {
      * @return              Empty base64-encoded PDF document
      */
     @POST
-    @Path("/create")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response create(MetaData metadata) {
-        PDDocument document = new PDDocument();
-        PDPage page = new PDPage();
-        document.addPage(page);
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
-        addMetaData(metadata, document);
-
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        try {
-            document.save(byteArrayOutputStream);
-            document.close();
-        } catch (IOException e) {
+        try(PDDocument document = createDocument(metadata)) {
+            document.save(stream);
+        } catch(IOException e) {
             log.error(e.toString(), e);
             return Response.serverError().entity("Error saving document").build();
         }
 
-        String base64EncodedByteArray = encodeDocument(byteArrayOutputStream);
-        Map<String, Object> documentEntity = createEntity(base64EncodedByteArray);
+        return Response.ok().entity(createEncodedEntity(stream.toByteArray())).build();
+    }
 
-        return Response.ok().entity(documentEntity).build();
+    private PDDocument createDocument(MetaData metadata) {
+        PDDocument document = new PDDocument();
+        addPages(metadata, document);
+        addMetaData(metadata, document);
+
+        return document;
+    }
+
+    private void addPages(MetaData metadata, PDDocument document) {
+        for (int i = 0; i < metadata.getNumberOfPages(); i++) {
+            document.addPage(new PDPage());
+        }
+
+        // A document should always have at least 1 page
+        if (document.getPages().getCount() == 0) {
+            document.addPage(new PDPage());
+        }
     }
 
     private void addMetaData(MetaData metadata, PDDocument document) {
         PDDocumentInformation information = document.getDocumentInformation();
+
         information.setAuthor(metadata.getAuthor());
         information.setTitle(metadata.getTitle());
         information.setCreator(metadata.getCreator());
         information.setSubject(metadata.getSubject());
+        information.setKeywords(StringUtils.join(metadata.getKeyWords(), ", "));
+
         information.setCreationDate(Calendar.getInstance());
         information.setModificationDate(Calendar.getInstance());
-        information.setKeywords(StringUtils.join(metadata.getKeyWords(), ", "));
     }
 
-    private Map<String, Object> createEntity(String base64EncodedByteArray) {
-        Map<String, Object> documentEntity = new HashMap<>();
-        documentEntity.put("data", base64EncodedByteArray);
-        return documentEntity;
+    private Map<String, Object> createEncodedEntity(byte[] input) {
+        String base64EncodedByteArray = Base64.getEncoder().encodeToString(input);
+        return createEntity(base64EncodedByteArray);
     }
 
-    private String encodeDocument(ByteArrayOutputStream byteArrayOutputStream) {
-        byte[] file = byteArrayOutputStream.toByteArray();
-        return Base64.getEncoder().encodeToString(file);
+    private Map<String, Object> createEntity(String input) {
+        Map<String, Object> entity = new HashMap<>();
+        entity.put("data", input);
+
+        return entity;
     }
 }

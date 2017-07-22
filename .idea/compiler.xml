@@ -7,10 +7,12 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="fileConverter" />
+        <module name="fileService" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="fileConverter" target="1.8" />
+      <module name="fileService" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>

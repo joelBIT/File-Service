@@ -12,6 +12,7 @@ public class MetaData implements Serializable {
     private String title;
     private String subject;
     private String creator;
+    private int numberOfPages;
     private List<String> keyWords;
 
     public String getAuthor() {
@@ -29,6 +30,8 @@ public class MetaData implements Serializable {
     public String getCreator() {
         return creator;
     }
+
+    public int getNumberOfPages() { return numberOfPages; }
 
     public List<String> getKeyWords() {
         return keyWords;
