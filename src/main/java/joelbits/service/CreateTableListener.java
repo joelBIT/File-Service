@@ -15,12 +15,9 @@ public class CreateTableListener implements ServletContextListener {
 
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
-        Connection connection = (Connection) servletContextEvent.getServletContext().getAttribute("connection");
-
-        try {
+        try (Connection connection = (Connection) servletContextEvent.getServletContext().getAttribute("connection")) {
             URL url = CreateTableListener.class.getClassLoader().getResource("files.sql");
             RunScript.execute(connection, new FileReader(url.getFile()));
-            connection.close();
         } catch (Exception e) {
             log.error(e.toString(), e);
         }

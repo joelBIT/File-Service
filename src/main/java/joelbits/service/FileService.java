@@ -38,8 +38,7 @@ public class FileService {
             return Response.status(e.getStatus()).entity(createExceptionEntity(e.getStatus(), e.getMessage())).build();
         }
 
-        try {
-            Connection connection = DatabaseUtil.getConnection();
+        try (Connection connection = DatabaseUtil.getConnection()) {
             Blob blob = connection.createBlob();
             blob.setBytes(1, data);
 
@@ -50,10 +49,7 @@ public class FileService {
             statement.setTimestamp(3, timestamp);
             statement.execute();
 
-            ResultSet resultSet = statement.getGeneratedKeys();
-            resultSet.next();
-            String fileId = resultSet.getString(1);
-            connection.close();
+            String fileId = extractGeneratedID(statement);
 
             return Response.ok().entity(createEntity("id", fileId)).build();
         } catch (Exception e) {
@@ -75,8 +71,17 @@ public class FileService {
         }
     }
 
+    private Map<String, Object> createExceptionEntity(Status status, String message) {
+        Map<String, Object> apiException = new HashMap<>();
+        apiException.put("status", status.getStatusCode());
+        apiException.put("message", message);
+
+        return apiException;
+    }
+
     private Map<String, Object> createEncodedEntity(byte[] input) {
         String base64EncodedByteArray = Base64.getEncoder().encodeToString(input);
+
         return createEntity("data", base64EncodedByteArray);
     }
 
@@ -85,6 +90,13 @@ public class FileService {
         entity.put(key, value);
 
         return entity;
+    }
+
+    private String extractGeneratedID(PreparedStatement statement) throws SQLException {
+        ResultSet resultSet = statement.getGeneratedKeys();
+        resultSet.next();
+
+        return resultSet.getString(1);
     }
 
     /**
@@ -105,20 +117,17 @@ public class FileService {
             return Response.status(e.getStatus()).entity(createExceptionEntity(e.getStatus(), e.getMessage())).build();
         }
 
-        try {
-            Connection connection = DatabaseUtil.getConnection();
+        try (Connection connection = DatabaseUtil.getConnection()) {
             PreparedStatement statement = connection.prepareStatement("SELECT * FROM FILES WHERE ID = ?");
             statement.setInt(1, fileId);
             ResultSet resultSet = statement.executeQuery();
-            if (!resultSet.next()) {
-                return Response.status(Status.NOT_FOUND).entity(createExceptionEntity(Status.NOT_FOUND,"No file found with id " + fileId)).build();
-            }
 
-            Blob blob = resultSet.getBlob("DATA");
-            byte[] fileData = blob.getBytes(1, (int) blob.length());
-            connection.close();
+            byte[] fileData = extractBinaryData(resultSet);
 
             return Response.ok().entity(createEncodedEntity(fileData)).build();
+        } catch (ApiException e) {
+            log.error(e.toString(), e);
+            return Response.status(Status.NOT_FOUND).entity(createExceptionEntity(e.getStatus(), e.getMessage())).build();
         } catch (Exception e) {
             log.error(e.toString(), e);
             return Response.serverError().entity(createExceptionEntity(Status.INTERNAL_SERVER_ERROR, "Could not retrieve data from database")).build();
@@ -139,11 +148,12 @@ public class FileService {
         }
     }
 
-    private Map<String, Object> createExceptionEntity(Status status, String message) {
-        Map<String, Object> apiException = new HashMap<>();
-        apiException.put("status", status.getStatusCode());
-        apiException.put("message", message);
+    private byte[] extractBinaryData(ResultSet resultSet) throws ApiException, SQLException {
+        if (!resultSet.next()) {
+            throw new ApiException(Status.NOT_FOUND, "No file found");
+        }
+        Blob blob = resultSet.getBlob("DATA");
 
-        return apiException;
+        return blob.getBytes(1, (int) blob.length());
     }
 }

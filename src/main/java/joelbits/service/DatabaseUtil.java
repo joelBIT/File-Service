@@ -3,7 +3,7 @@ package joelbits.service;
 import java.sql.Connection;
 import java.sql.DriverManager;
 
-class DatabaseUtil {
+final class DatabaseUtil {
     private DatabaseUtil() {}
 
     static Connection getConnection() throws Exception {
