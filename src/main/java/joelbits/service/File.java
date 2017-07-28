@@ -9,6 +9,13 @@ public class File implements Serializable {
     private String data;
     private String type;
 
+    public File() {}
+
+    public File(String data, String type) {
+        this.data = data;
+        this.type = type;
+    }
+
     public String getData() {
         return data;
     }

@@ -1,6 +1,7 @@
 package joelbits.service;
 
 import joelbits.service.exception.ApiException;
+import joelbits.service.util.DatabaseUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

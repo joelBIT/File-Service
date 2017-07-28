@@ -1,12 +1,12 @@
-package joelbits.service;
+package joelbits.service.util;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 
-final class DatabaseUtil {
+public final class DatabaseUtil {
     private DatabaseUtil() {}
 
-    static Connection getConnection() throws Exception {
+    public static Connection getConnection() throws Exception {
         Class.forName("org.h2.Driver");
         return DriverManager.getConnection("jdbc:h2:~/test", "sa", "sa");
     }

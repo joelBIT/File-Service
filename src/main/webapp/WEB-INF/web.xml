@@ -5,6 +5,6 @@
     </listener>
 
     <listener>
-        <listener-class>joelbits.service.CreateTableListener</listener-class>
+        <listener-class>joelbits.service.listener.CreateTableListener</listener-class>
     </listener>
 </web-app>
