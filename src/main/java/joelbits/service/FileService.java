@@ -2,6 +2,7 @@ package joelbits.service;
 
 import joelbits.service.exception.ApiException;
 import joelbits.service.util.DatabaseUtil;
+import joelbits.service.util.EntityUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +37,7 @@ public class FileService {
         try {
             data = decodeFileData(file);
         } catch (ApiException e) {
-            return Response.status(e.getStatus()).entity(createExceptionEntity(e.getStatus(), e.getMessage())).build();
+            return Response.status(e.getStatus()).entity(EntityUtil.exception(e.getStatus(), e.getMessage())).build();
         }
 
         try (Connection connection = DatabaseUtil.getConnection()) {
@@ -55,7 +56,7 @@ public class FileService {
             return Response.ok().entity(createEntity("id", fileId)).build();
         } catch (Exception e) {
             log.error(e.toString(), e);
-            return Response.serverError().entity(createExceptionEntity(Status.INTERNAL_SERVER_ERROR, "Could not insert data into database")).build();
+            return Response.serverError().entity(EntityUtil.exception(Status.INTERNAL_SERVER_ERROR, "Could not insert data into database")).build();
         }
     }
 
@@ -70,20 +71,6 @@ public class FileService {
         } catch (IllegalArgumentException e) {
             throw new ApiException(Status.BAD_REQUEST, "Data not base64 encoded");
         }
-    }
-
-    private Map<String, Object> createExceptionEntity(Status status, String message) {
-        Map<String, Object> apiException = new HashMap<>();
-        apiException.put("status", status.getStatusCode());
-        apiException.put("message", message);
-
-        return apiException;
-    }
-
-    private Map<String, Object> createEncodedEntity(byte[] input) {
-        String base64EncodedByteArray = Base64.getEncoder().encodeToString(input);
-
-        return createEntity("data", base64EncodedByteArray);
     }
 
     private Map<String, Object> createEntity(String key, String value) {
@@ -115,7 +102,7 @@ public class FileService {
         try {
             fileId = verifyId(fileid);
         } catch (ApiException e) {
-            return Response.status(e.getStatus()).entity(createExceptionEntity(e.getStatus(), e.getMessage())).build();
+            return Response.status(e.getStatus()).entity(EntityUtil.exception(e.getStatus(), e.getMessage())).build();
         }
 
         try (Connection connection = DatabaseUtil.getConnection()) {
@@ -125,13 +112,13 @@ public class FileService {
 
             byte[] fileData = extractBinaryData(resultSet);
 
-            return Response.ok().entity(createEncodedEntity(fileData)).build();
+            return Response.ok().entity(EntityUtil.encoded(fileData)).build();
         } catch (ApiException e) {
             log.error(e.toString(), e);
-            return Response.status(Status.NOT_FOUND).entity(createExceptionEntity(e.getStatus(), e.getMessage())).build();
+            return Response.status(Status.NOT_FOUND).entity(EntityUtil.exception(e.getStatus(), e.getMessage())).build();
         } catch (Exception e) {
             log.error(e.toString(), e);
-            return Response.serverError().entity(createExceptionEntity(Status.INTERNAL_SERVER_ERROR, "Could not retrieve data from database")).build();
+            return Response.serverError().entity(EntityUtil.exception(Status.INTERNAL_SERVER_ERROR, "Could not retrieve data from database")).build();
         }
     }
 

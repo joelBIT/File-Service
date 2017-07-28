@@ -8,6 +8,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <resteasy.version>3.0.14.Final</resteasy.version>
+        <itext.version>5.5.10</itext.version>
     </properties>
 
     <build>
@@ -54,14 +55,24 @@
             <version>2.0.6</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox-tools</artifactId>
+            <version>2.0.7</version>
+        </dependency>
+        <dependency>
             <groupId>net.sf.cssbox</groupId>
             <artifactId>pdf2dom</artifactId>
             <version>1.6</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.pdfbox</groupId>
-            <artifactId>pdfbox-tools</artifactId>
-            <version>2.0.7</version>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>itextpdf</artifactId>
+            <version>${itext.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.itextpdf.tool</groupId>
+            <artifactId>xmlworker</artifactId>
+            <version>${itext.version}</version>
         </dependency>
 
         <dependency>

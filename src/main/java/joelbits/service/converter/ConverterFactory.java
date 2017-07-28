@@ -14,8 +14,10 @@ public class ConverterFactory {
         switch(type) {
             case PDF:
                 return new PDFConverter();
+            case HTML:
+                return new HTMLConverter();
             default:
-                log.error("Converter for given type does not exist");
+                log.warn("Converter for given type does not exist");
                 throw new ApiException(Status.INTERNAL_SERVER_ERROR, "Converter for given type does not exist");
         }
     }

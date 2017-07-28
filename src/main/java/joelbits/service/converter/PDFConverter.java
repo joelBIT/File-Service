@@ -4,12 +4,16 @@ import joelbits.service.File;
 import joelbits.service.FileType;
 import joelbits.service.exception.ApiException;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.ImageType;
+import org.apache.pdfbox.rendering.PDFRenderer;
+import org.apache.pdfbox.tools.imageio.ImageIOUtil;
 import org.fit.pdfdom.PDFDomTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static javax.ws.rs.core.Response.Status;
 
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.Base64;
 
@@ -26,11 +30,9 @@ public class PDFConverter implements Converter {
             throw new ApiException(Status.BAD_REQUEST, "Cannot convert file to the same format it already has");
         }
 
-        String base64EncodedData = file.getData();
         byte[] fileData;
-
         try {
-            fileData = Base64.getDecoder().decode(base64EncodedData);
+            fileData = Base64.getDecoder().decode(file.getData());
         } catch (IllegalArgumentException e) {
             log.error("Data not base64 encoded", e);
             throw new ApiException(Status.BAD_REQUEST, "Data not base64 encoded");
@@ -44,13 +46,23 @@ public class PDFConverter implements Converter {
                 case HTML:
                     new PDFDomTree().writeText(pdf, writer);
                     break;
+                case JPG:
+                    toImage(pdf, type.getType(), stream);
+                    break;
             }
-
         } catch (Exception e) {
             log.error("Could not convert file", e);
             throw new ApiException(Status.INTERNAL_SERVER_ERROR, "Could not convert file");
         }
 
         return stream.toByteArray();
+    }
+
+    private void toImage(PDDocument pdf, String format, OutputStream outputStream) throws IOException {
+        PDFRenderer pdfRenderer = new PDFRenderer(pdf);
+        for (int page = 0; page < pdf.getNumberOfPages(); ++page) {
+            BufferedImage bim = pdfRenderer.renderImageWithDPI(page, 300, ImageType.RGB);
+            ImageIOUtil.writeImage(bim, format, outputStream, 300);
+        }
     }
 }

@@ -3,6 +3,7 @@ package joelbits.service;
 import joelbits.service.converter.Converter;
 import joelbits.service.converter.ConverterFactory;
 import joelbits.service.exception.ApiException;
+import joelbits.service.util.EntityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,10 +12,6 @@ import static javax.ws.rs.core.Response.Status;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * For converting existing files in database and store the converted file as well as keeping the old file
@@ -43,7 +40,7 @@ public class FileConverterService {
             paramType = FileType.valueOf(fileType.toUpperCase());
         } catch (Exception e) {
             log.error(e.toString(), e);
-            return Response.status(Status.BAD_REQUEST).entity(createExceptionEntity(Status.BAD_REQUEST, "Cannot convert " + file.getType() + " to " + fileType)).build();
+            return Response.status(Status.BAD_REQUEST).entity(EntityUtil.exception(Status.BAD_REQUEST, "Cannot convert " + file.getType() + " to " + fileType)).build();
         }
 
         try {
@@ -51,31 +48,10 @@ public class FileConverterService {
             File convertFile = new File(file.getData(), paramType.getType());
             byte[] result = converter.convert(convertFile);
 
-            return Response.ok().entity(createEncodedEntity(result)).build();
+            return Response.ok().entity(EntityUtil.encoded(result)).build();
         } catch (ApiException e) {
             log.error(e.toString(), e);
-            return Response.status(e.getStatus()).entity(createExceptionEntity(e.getStatus(), e.getMessage())).build();
+            return Response.status(e.getStatus()).entity(EntityUtil.exception(e.getStatus(), e.getMessage())).build();
         }
-    }
-
-    private Map<String, Object> createExceptionEntity(Status status, String message) {
-        Map<String, Object> apiException = new HashMap<>();
-        apiException.put("status", status.getStatusCode());
-        apiException.put("message", message);
-
-        return apiException;
-    }
-
-    private Map<String, Object> createEncodedEntity(byte[] input) {
-        String base64EncodedByteArray = Base64.getEncoder().encodeToString(input);
-
-        return createEntity("data", base64EncodedByteArray);
-    }
-
-    private Map<String, Object> createEntity(String key, String value) {
-        Map<String, Object> entity = new HashMap<>();
-        entity.put(key, value);
-
-        return entity;
     }
 }
