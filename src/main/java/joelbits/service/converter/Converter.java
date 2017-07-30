@@ -1,6 +1,6 @@
 package joelbits.service.converter;
 
-import joelbits.service.File;
+import joelbits.service.file.File;
 import joelbits.service.exception.ApiException;
 
 public interface Converter {

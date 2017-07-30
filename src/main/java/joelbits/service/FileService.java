@@ -1,6 +1,7 @@
 package joelbits.service;
 
 import joelbits.service.exception.ApiException;
+import joelbits.service.file.File;
 import joelbits.service.util.DatabaseUtil;
 import joelbits.service.util.EntityUtil;
 import org.apache.commons.lang3.StringUtils;

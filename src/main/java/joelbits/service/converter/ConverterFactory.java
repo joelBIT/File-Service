@@ -1,6 +1,6 @@
 package joelbits.service.converter;
 
-import joelbits.service.FileType;
+import joelbits.service.file.FileType;
 import joelbits.service.exception.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,9 +16,17 @@ public class ConverterFactory {
                 return new PDFConverter();
             case HTML:
                 return new HTMLConverter();
+            case TXT:
+                return new TXTConverter();
+            case JPEG:
+            case JPG:
+            case PNG:
+            case BMP:
+            case GIF:
+                return new ImageConverter();
             default:
-                log.warn("Converter for given type does not exist");
-                throw new ApiException(Status.INTERNAL_SERVER_ERROR, "Converter for given type does not exist");
+                log.warn("Converter does not exist for given type");
+                throw new ApiException(Status.INTERNAL_SERVER_ERROR, "Converter does not exist for given type");
         }
     }
 }

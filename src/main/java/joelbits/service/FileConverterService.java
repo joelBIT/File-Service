@@ -3,6 +3,8 @@ package joelbits.service;
 import joelbits.service.converter.Converter;
 import joelbits.service.converter.ConverterFactory;
 import joelbits.service.exception.ApiException;
+import joelbits.service.file.File;
+import joelbits.service.file.FileType;
 import joelbits.service.util.EntityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +16,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 /**
- * For converting existing files in database and store the converted file as well as keeping the old file
+ * Convert a Base64 encoded file and let the client retrieve the result.
  */
 @Path("/v1/type")
 public class FileConverterService {
@@ -32,20 +34,20 @@ public class FileConverterService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response convert(File file, @PathParam("fileType") String fileType) {
-        FileType type;
-        FileType paramType;
+        FileType originalType;
+        FileType convertedType;
 
         try {
-            type = FileType.valueOf(file.getType().toUpperCase());
-            paramType = FileType.valueOf(fileType.toUpperCase());
+            originalType = FileType.fromType(file.getType());
+            convertedType = FileType.fromType(fileType);
         } catch (Exception e) {
             log.error(e.toString(), e);
             return Response.status(Status.BAD_REQUEST).entity(EntityUtil.exception(Status.BAD_REQUEST, "Cannot convert " + file.getType() + " to " + fileType)).build();
         }
 
         try {
-            Converter converter = ConverterFactory.getConverter(type);
-            File convertFile = new File(file.getData(), paramType.getType());
+            Converter converter = ConverterFactory.getConverter(originalType);
+            File convertFile = new File(file.getData(), convertedType.getType(), file.getName());
             byte[] result = converter.convert(convertFile);
 
             return Response.ok().entity(EntityUtil.encoded(result)).build();

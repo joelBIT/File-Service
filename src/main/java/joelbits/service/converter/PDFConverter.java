@@ -1,11 +1,15 @@
 package joelbits.service.converter;
 
-import joelbits.service.File;
-import joelbits.service.FileType;
+import joelbits.service.file.File;
+import joelbits.service.file.FileType;
 import joelbits.service.exception.ApiException;
+import org.apache.pdfbox.cos.COSDocument;
+import org.apache.pdfbox.io.RandomAccessBuffer;
+import org.apache.pdfbox.pdfparser.PDFParser;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.tools.imageio.ImageIOUtil;
 import org.fit.pdfdom.PDFDomTree;
 import org.slf4j.Logger;
@@ -18,14 +22,14 @@ import java.io.*;
 import java.util.Base64;
 
 /**
- * Convert PDF file to supplied format if supplied format is of another type.
+ * Convert PDF file to supplied format if possible.
  */
 public class PDFConverter implements Converter {
     private final static Logger log = LoggerFactory.getLogger(PDFConverter.class);
 
     @Override
     public byte[] convert(File file) throws ApiException {
-        if (FileType.PDF.getType().equalsIgnoreCase(file.getType())) {
+        if (FileType.PDF.equals(FileType.fromType(file.getType()))) {
             log.info("File has same format as desired. Conversion skipped.");
             throw new ApiException(Status.BAD_REQUEST, "Cannot convert file to the same format it already has");
         }
@@ -34,35 +38,61 @@ public class PDFConverter implements Converter {
         try {
             fileData = Base64.getDecoder().decode(file.getData());
         } catch (IllegalArgumentException e) {
-            log.error("Data not base64 encoded", e);
+            log.error(e.toString(), e);
             throw new ApiException(Status.BAD_REQUEST, "Data not base64 encoded");
         }
 
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        try (Writer writer = new OutputStreamWriter(stream)) {
-            PDDocument pdf = PDDocument.load(fileData);
-            FileType type = FileType.valueOf(file.getType());
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            FileType type = FileType.fromType(file.getType());
             switch (type) {
                 case HTML:
-                    new PDFDomTree().writeText(pdf, writer);
-                    break;
+                    new PDFDomTree().writeText(PDDocument.load(fileData), new OutputStreamWriter(outputStream));
+                    return outputStream.toByteArray();
+                case TXT:
+                    return toText(fileData, outputStream);
+                case JPEG:
                 case JPG:
-                    toImage(pdf, type.getType(), stream);
-                    break;
+                case PNG:
+                case BMP:
+                case GIF:
+                    return toImage(fileData, type.getType(), outputStream);
+                default:
+                    log.warn("Could not find matching conversion for type " + type);
+                    return new byte[0];
             }
         } catch (Exception e) {
-            log.error("Could not convert file", e);
-            throw new ApiException(Status.INTERNAL_SERVER_ERROR, "Could not convert file");
+            log.error(e.toString(), e);
+            throw new ApiException(Status.INTERNAL_SERVER_ERROR, "Could not convert file " + file.getName());
         }
-
-        return stream.toByteArray();
     }
 
-    private void toImage(PDDocument pdf, String format, OutputStream outputStream) throws IOException {
+    private byte[] toText(byte[] fileData, ByteArrayOutputStream outputStream) throws IOException {
+        PDFParser parser = new PDFParser(new RandomAccessBuffer(fileData));
+        parser.parse();
+
+        COSDocument document = parser.getDocument();
+        PDFTextStripper pdfStripper = new PDFTextStripper();
+        PDDocument pdf = new PDDocument(document);
+        String parsedText = pdfStripper.getText(pdf);
+
+        PrintWriter writer = new PrintWriter(outputStream);
+        writer.print(parsedText);
+        writer.close();
+        pdf.close();
+        document.close();
+
+        return outputStream.toByteArray();
+    }
+
+    private byte[] toImage(byte[] fileData, String format, ByteArrayOutputStream outputStream) throws IOException {
+        PDDocument pdf = PDDocument.load(fileData);
         PDFRenderer pdfRenderer = new PDFRenderer(pdf);
         for (int page = 0; page < pdf.getNumberOfPages(); ++page) {
             BufferedImage bim = pdfRenderer.renderImageWithDPI(page, 300, ImageType.RGB);
             ImageIOUtil.writeImage(bim, format, outputStream, 300);
         }
+        pdf.close();
+
+        return outputStream.toByteArray();
     }
 }
