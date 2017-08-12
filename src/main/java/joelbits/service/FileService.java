@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static javax.ws.rs.core.Response.Status;
+
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -38,6 +39,7 @@ public class FileService {
         try {
             data = decodeFileData(file);
         } catch (ApiException e) {
+            log.error(e.toString(), e);
             return Response.status(e.getStatus()).entity(EntityUtil.exception(e.getStatus(), e.getMessage())).build();
         }
 
@@ -54,7 +56,7 @@ public class FileService {
 
             String fileId = extractGeneratedID(statement);
 
-            return Response.ok().entity(createEntity("id", fileId)).build();
+            return Response.ok().entity(EntityUtil.entity("id", fileId)).build();
         } catch (Exception e) {
             log.error(e.toString(), e);
             return Response.serverError().entity(EntityUtil.exception(Status.INTERNAL_SERVER_ERROR, "Could not insert data into database")).build();
@@ -70,15 +72,9 @@ public class FileService {
         try {
             return Base64.getDecoder().decode(base64EncodedData);
         } catch (IllegalArgumentException e) {
+            log.error(e.toString(), e);
             throw new ApiException(Status.BAD_REQUEST, "Data not base64 encoded");
         }
-    }
-
-    private Map<String, Object> createEntity(String key, String value) {
-        Map<String, Object> entity = new HashMap<>();
-        entity.put(key, value);
-
-        return entity;
     }
 
     private String extractGeneratedID(PreparedStatement statement) throws SQLException {
@@ -103,6 +99,7 @@ public class FileService {
         try {
             fileId = verifyId(fileid);
         } catch (ApiException e) {
+            log.error(e.toString(), e);
             return Response.status(e.getStatus()).entity(EntityUtil.exception(e.getStatus(), e.getMessage())).build();
         }
 
@@ -116,7 +113,7 @@ public class FileService {
             return Response.ok().entity(EntityUtil.encoded(fileData)).build();
         } catch (ApiException e) {
             log.error(e.toString(), e);
-            return Response.status(Status.NOT_FOUND).entity(EntityUtil.exception(e.getStatus(), e.getMessage())).build();
+            return Response.status(e.getStatus()).entity(EntityUtil.exception(e.getStatus(), e.getMessage())).build();
         } catch (Exception e) {
             log.error(e.toString(), e);
             return Response.serverError().entity(EntityUtil.exception(Status.INTERNAL_SERVER_ERROR, "Could not retrieve data from database")).build();
@@ -125,7 +122,6 @@ public class FileService {
 
     private int verifyId(String id) throws ApiException {
         if (StringUtils.isEmpty(id)) {
-            log.error("The ID property is missing");
             throw new ApiException(Status.BAD_REQUEST, "The ID property is missing");
         }
 

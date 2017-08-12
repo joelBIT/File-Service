@@ -9,6 +9,9 @@ import javax.servlet.ServletContextListener;
 import java.io.FileReader;
 import java.net.URL;
 import java.sql.Connection;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
 public class CreateTableListener implements ServletContextListener {
     private final static Logger log = LoggerFactory.getLogger(CreateTableListener.class);
@@ -16,6 +19,7 @@ public class CreateTableListener implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
         try (Connection connection = (Connection) servletContextEvent.getServletContext().getAttribute("connection")) {
+            Class.forName("org.h2.Driver");
             URL url = CreateTableListener.class.getClassLoader().getResource("files.sql");
             RunScript.execute(connection, new FileReader(url.getFile()));
         } catch (Exception e) {
@@ -24,5 +28,12 @@ public class CreateTableListener implements ServletContextListener {
     }
 
     @Override
-    public void contextDestroyed(ServletContextEvent servletContextEvent) { }
+    public void contextDestroyed(ServletContextEvent servletContextEvent) {
+        try {
+            Driver driver = DriverManager.getDriver("org.h2.Driver");
+            DriverManager.deregisterDriver(driver);
+        } catch (SQLException ex) {
+            log.info("Could not deregister org.h2.Driver");
+        }
+    }
 }

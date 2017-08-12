@@ -19,10 +19,10 @@ public class EntityUtil {
     public static Map<String, Object> encoded(byte[] input) {
         String base64EncodedByteArray = Base64.getEncoder().encodeToString(input);
 
-        return createEntity("data", base64EncodedByteArray);
+        return entity("data", base64EncodedByteArray);
     }
 
-    private static Map<String, Object> createEntity(String key, String value) {
+    public static Map<String, Object> entity(String key, String value) {
         Map<String, Object> entity = new HashMap<>();
         entity.put(key, value);
 

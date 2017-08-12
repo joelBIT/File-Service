@@ -15,9 +15,6 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-/**
- * Convert a Base64 encoded file and let the client retrieve the result.
- */
 @Path("/v1/type")
 public class FileConverterService {
     private final static Logger log = LoggerFactory.getLogger(FileConverterService.class);

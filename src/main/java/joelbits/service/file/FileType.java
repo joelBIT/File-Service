@@ -3,7 +3,6 @@ package joelbits.service.file;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -40,13 +39,5 @@ public enum FileType {
 
     public static List<FileType> imageTypes() {
         return Arrays.asList(JPG, JPEG, GIF, BMP, PNG);
-    }
-
-    private static List<String> toTypes(List<FileType> types) {
-        List<String> result = new ArrayList<String>();
-        for (FileType type : types) {
-            result.add(type.getType());
-        }
-        return result;
     }
 }
