@@ -37,6 +37,10 @@ public class FileConverterService {
         try {
             originalType = FileType.fromType(file.getType());
             convertedType = FileType.fromType(fileType);
+            compareFileTypes(originalType, convertedType);
+        } catch (ApiException e) {
+            log.error(e.toString(), e);
+            return Response.status(e.getStatus()).entity(EntityUtil.exception(e.getStatus(), e.getMessage())).build();
         } catch (Exception e) {
             log.error(e.toString(), e);
             return Response.status(Status.BAD_REQUEST).entity(EntityUtil.exception(Status.BAD_REQUEST, "Cannot convert " + file.getType() + " to " + fileType)).build();
@@ -51,6 +55,13 @@ public class FileConverterService {
         } catch (ApiException e) {
             log.error(e.toString(), e);
             return Response.status(e.getStatus()).entity(EntityUtil.exception(e.getStatus(), e.getMessage())).build();
+        }
+    }
+
+    private void compareFileTypes(FileType originalType, FileType convertedType) throws ApiException {
+        if (originalType.equals(convertedType)) {
+            log.info("File has same format as desired. Conversion skipped.");
+            throw new ApiException(Status.BAD_REQUEST, "Cannot convert file to the same format it already has");
         }
     }
 }

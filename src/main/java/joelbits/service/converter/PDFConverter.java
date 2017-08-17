@@ -29,11 +29,6 @@ public class PDFConverter implements Converter {
 
     @Override
     public byte[] convert(File file) throws ApiException {
-        if (FileType.PDF.equals(FileType.fromType(file.getType()))) {
-            log.info("File has same format as desired. Conversion skipped.");
-            throw new ApiException(Status.BAD_REQUEST, "Cannot convert file to the same format it already has");
-        }
-
         byte[] fileData;
         try {
             fileData = Base64.getDecoder().decode(file.getData());
